@@ -47,7 +47,7 @@ jobs:
         with:
           webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
           webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-          message: "✅ Build deployed successfully! 🎰"
+          message: "✅ Build deployed successfully! 🎰 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           color: "00FF00"
 
       - name: Discord notification on failure
@@ -56,5 +56,5 @@ jobs:
         with:
           webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
           webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
-          message: "❌ Build failed! Check the logs."
+          message: "❌ Build failed! Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           color: "FF0000"
