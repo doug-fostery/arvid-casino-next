@@ -108,7 +108,7 @@ export default function Casino() {
         disabled={spinning}
         className="w-full py-5 text-2xl sm:text-xl uppercase tracking-widest"
       >
-        🎲 SPIN! 🎲
+        <span className="relative z-10">🎲 SPIN! 🎲</span>
       </Button>
       
       <Result text={result.text} type={result.type} />
