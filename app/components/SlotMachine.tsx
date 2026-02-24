@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Symbol, SYMBOLS, SYMBOL_WEIGHTS, MULTIPLIERS } from '../lib/types';
 
 interface SlotMachineProps {
@@ -15,7 +15,6 @@ interface SlotMachineProps {
 
 export default function SlotMachine({
   spinning,
-  onSpinStart,
   onWin,
   onLose,
   playSpinSound,
@@ -23,143 +22,130 @@ export default function SlotMachine({
   playLoseSound,
 }: SlotMachineProps) {
   const [symbols, setSymbols] = useState<Symbol[]>(['🍒', '🍒', '🍒']);
+  const [stoppedSymbols, setStoppedSymbols] = useState<(Symbol | null)[]>([null, null, null]);
   const [winnerSlots, setWinnerSlots] = useState<boolean[]>([false, false, false]);
-  const [slowingSlots, setSlowingSlots] = useState<number[]>([]);
-  const spinRef = useRef<number | null>(null);
+  const [phase, setPhase] = useState<'idle' | 'spinning' | 'slowing' | 'stopped'>('idle');
 
   useEffect(() => {
     if (!spinning) {
-      setSlowingSlots([]);
+      setPhase('idle');
+      setStoppedSymbols([null, null, null]);
+      setWinnerSlots([false, false, false]);
       return;
     }
 
+    // Reset state
+    setPhase('spinning');
+    setStoppedSymbols([null, null, null]);
     setWinnerSlots([false, false, false]);
-    setSlowingSlots([]);
     playSpinSound();
 
-    let spins = 0;
+    // Fast spin phase - 10 spins at 60ms each = 600ms
+    let fastSpins = 0;
     const maxFastSpins = 10;
-    
-    const spin = () => {
+
+    const fastSpinInterval = setInterval(() => {
       setSymbols([getSymbol(), getSymbol(), getSymbol()]);
       playSpinSound();
-      spins++;
-      
-      if (spins >= maxFastSpins) {
-        // Start staggered stopping
-        startSlowingPhase(0);
-      } else {
-        spinRef.current = window.setTimeout(spin, 60);
-      }
-    };
-    
-    spin();
+      fastSpins++;
 
-    return () => {
-      if (spinRef.current) clearTimeout(spinRef.current);
-    };
+      if (fastSpins >= maxFastSpins) {
+        clearInterval(fastSpinInterval);
+        startSlowingPhase();
+      }
+    }, 60);
+
+    return () => clearInterval(fastSpinInterval);
   }, [spinning, playSpinSound]);
 
-  const startSlowingPhase = (slotIndex: number) => {
-    if (slotIndex >= 3) {
-      // All slots in slowing phase, now stop them
-      stopSlot(0);
-      return;
-    }
-
-    setSlowingSlots(prev => [...prev, slotIndex]);
+  const startSlowingPhase = () => {
+    setPhase('slowing');
     
-    // Keep spinning this slot while in slowing phase
-    const slowSpin = () => {
-      setSymbols(prev => {
-        const newSymbols = [...prev];
-        newSymbols[slotIndex] = getSymbol();
-        return newSymbols;
-      });
+    // Stop slot 0 at T+1000ms with final symbol
+    setTimeout(() => {
+      const final0 = getSymbol();
+      setStoppedSymbols(prev => [final0, prev[1], prev[2]]);
       playSpinSound();
-    };
-    
-    // Spin this slot a few times while slowing
-    let slowSpins = 0;
-    const maxSlowSpins = 3;
-    
-    const slowInterval = setInterval(() => {
-      slowSpin();
-      slowSpins++;
-      if (slowSpins >= maxSlowSpins) {
-        clearInterval(slowInterval);
-      }
-    }, 100);
-    
-    setTimeout(() => {
-      startSlowingPhase(slotIndex + 1);
     }, 400);
-  };
 
-  const stopSlot = (slotIndex: number) => {
-    if (slotIndex >= 3) {
-      // All stopped, determine winner
-      finalizeSpin();
-      return;
-    }
-
-    // Final symbol for this slot
-    setSymbols(prev => {
-      const newSymbols = [...prev];
-      newSymbols[slotIndex] = getSymbol();
-      return newSymbols;
-    });
-    playSpinSound();
-    
+    // Stop slot 1 at T+1350ms with final symbol
     setTimeout(() => {
-      stopSlot(slotIndex + 1);
-    }, 350);
+      const final1 = getSymbol();
+      setStoppedSymbols(prev => [prev[0], final1, prev[2]]);
+      playSpinSound();
+    }, 750);
+
+    // Stop slot 2 at T+1700ms with final symbol
+    setTimeout(() => {
+      const final2 = getSymbol();
+      setStoppedSymbols(prev => [prev[0], prev[1], final2]);
+      playSpinSound();
+      
+      // All stopped - determine result
+      setPhase('stopped');
+      determineResult();
+    }, 1100);
   };
 
-  const finalizeSpin = () => {
-    const finalSymbols = symbols;
-    const allSame = finalSymbols[0] === finalSymbols[1] && finalSymbols[1] === finalSymbols[2];
-    const twoSame = finalSymbols[0] === finalSymbols[1] || 
-                    finalSymbols[1] === finalSymbols[2] || 
-                    finalSymbols[0] === finalSymbols[2];
+  const determineResult = () => {
+    const finalSymbols = stoppedSymbols;
+    const [a, b, c] = finalSymbols;
 
-    if (allSame) {
-      const isJackpot = finalSymbols[0] === '7️⃣';
-      const multiplier = MULTIPLIERS[finalSymbols[0]];
+    // Guard - if any slot hasn't finished, don't determine result
+    if (a === null || b === null || c === null) return;
+
+    // All three match
+    if (a === b && b === c) {
+      const multiplier = MULTIPLIERS[a];
+      const isJackpot = a === '7️⃣';
       setWinnerSlots([true, true, true]);
       onWin(multiplier, isJackpot);
       playWinSound();
       setTimeout(() => setWinnerSlots([false, false, false]), 2000);
-    } else if (twoSame) {
+      return;
+    }
+
+    // Two match (small win)
+    if (a === b || b === c || a === c) {
       setWinnerSlots([true, true, true]);
-      onWin(1, false);
+      onWin(1, false); // 1x payout
       playWinSound();
       setTimeout(() => setWinnerSlots([false, false, false]), 1000);
-    } else {
-      onLose();
-      playLoseSound();
+      return;
     }
+
+    // No match - lose
+    onLose();
+    playLoseSound();
   };
 
+  // Determine which symbols to display
+  const displaySymbols = phase === 'idle' || phase === 'spinning' 
+    ? symbols 
+    : stoppedSymbols.map((s, i) => s || symbols[i]);
+
   const getSlotClass = (index: number) => {
-    const isSlowing = slowingSlots.includes(index);
+    const isStopped = phase === 'stopped' || (phase === 'slowing' && stoppedSymbols[index] !== null);
     const isWinner = winnerSlots[index];
     
-    let base = 'bg-gradient-to-b from-gray-100 via-gray-200 to-white w-[90px] sm:w-[65px] h-[110px] sm:h-[80px] rounded-xl flex items-center justify-center text-5xl sm:text-3xl border-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.3)] relative overflow-hidden';
+    const base = 'bg-gradient-to-b from-gray-100 via-gray-200 to-white w-[90px] sm:w-[65px] h-[110px] sm:h-[80px] rounded-xl flex items-center justify-center text-5xl sm:text-3xl border-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.3)] relative overflow-hidden';
     
     if (isWinner) {
-      base += ' animate-winner-glow border-yellow-400';
-    } else if (spinning && !isSlowing) {
-      base += ' animate-pulse';
+      return `${base} animate-winner-glow border-yellow-400`;
     }
-    
+    if (phase === 'spinning') {
+      return `${base} animate-pulse`;
+    }
+    if (phase === 'slowing' && !isStopped) {
+      return `${base} animate-pulse`;
+    }
     return base;
   };
 
   return (
     <div className="bg-gradient-to-b from-slate-800 to-slate-900 p-5 sm:p-3 rounded-2xl mb-6 border-3 border-gray-500 shadow-[inset_0_2px_20px_rgba(0,0,0,0.5),0_5px_20px_rgba(0,0,0,0.3)]">
       <div className="flex justify-center gap-3 sm:gap-2">
-        {symbols.map((symbol, i) => (
+        {displaySymbols.map((symbol, i) => (
           <div 
             key={i} 
             id={`slot${i + 1}`}
