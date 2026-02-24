@@ -93,7 +93,6 @@ export default function Casino() {
       
       <SlotMachine
         spinning={spinning}
-        onSpinStart={() => setSpinning(true)}
         onWin={handleWin}
         onLose={handleLose}
         playSpinSound={playSpinSound}
