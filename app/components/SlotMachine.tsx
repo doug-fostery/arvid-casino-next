@@ -33,7 +33,7 @@ export default function SlotMachine({
       document.getElementById('slot2'),
       document.getElementById('slot3')
     ];
-    slotEls.forEach(el => el?.classList.add('spinning'));
+    slotEls.forEach(el => el?.classList.add('animate-slotBlur'));
     playSpinSound();
 
     let spins = 0;
@@ -46,7 +46,7 @@ export default function SlotMachine({
       
       if (spins >= maxSpins) {
         clearInterval(interval);
-        slotEls.forEach(el => el?.classList.remove('spinning'));
+        slotEls.forEach(el => el?.classList.remove('animate-slotBlur'));
         finalizeSpin();
       }
     }, 80);
@@ -82,13 +82,13 @@ export default function SlotMachine({
   };
 
   return (
-    <div className="slots-container">
-      <div className="slots">
+    <div className="bg-gradient-slots p-5 sm:p-3 rounded-2xl mb-6 border-3 border-gray-500 shadow-slots-container">
+      <div className="flex justify-center gap-3 sm:gap-2">
         {symbols.map((symbol, i) => (
           <div 
             key={i} 
             id={`slot${i + 1}`}
-            className={`slot ${winnerSlots[i] ? 'winner' : ''}`}
+            className={`bg-gradient-slot w-[90px] sm:w-[65px] h-[110px] sm:h-[80px] rounded-xl flex items-center justify-content-center text-5xl sm:text-3xl border-4 border-gray-700 shadow-slot relative overflow-hidden slot-shine ${winnerSlots[i] ? 'animate-winnerGlow border-yellow-400' : ''}`}
           >
             {symbol}
           </div>
