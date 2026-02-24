@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Symbol, SYMBOLS, SYMBOL_WEIGHTS, MULTIPLIERS } from '../lib/types';
 
 interface SlotMachineProps {
@@ -24,51 +24,96 @@ export default function SlotMachine({
 }: SlotMachineProps) {
   const [symbols, setSymbols] = useState<Symbol[]>(['🍒', '🍒', '🍒']);
   const [winnerSlots, setWinnerSlots] = useState<boolean[]>([false, false, false]);
-  const [stoppedSlots, setStoppedSlots] = useState<number[]>([]);
+  const [slowingSlots, setSlowingSlots] = useState<number[]>([]);
+  const spinRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!spinning) {
-      setStoppedSlots([]);
+      setSlowingSlots([]);
       return;
     }
 
     setWinnerSlots([false, false, false]);
+    setSlowingSlots([]);
     playSpinSound();
 
     let spins = 0;
-    const maxFastSpins = 12;
+    const maxFastSpins = 10;
     
-    // Fast spinning phase
-    const fastInterval = setInterval(() => {
+    const spin = () => {
       setSymbols([getSymbol(), getSymbol(), getSymbol()]);
       playSpinSound();
       spins++;
       
       if (spins >= maxFastSpins) {
-        clearInterval(fastInterval);
         // Start staggered stopping
-        stopSlot(0);
+        startSlowingPhase(0);
+      } else {
+        spinRef.current = window.setTimeout(spin, 60);
       }
-    }, 80);
+    };
+    
+    spin();
 
-    return () => clearInterval(fastInterval);
+    return () => {
+      if (spinRef.current) clearTimeout(spinRef.current);
+    };
   }, [spinning, playSpinSound]);
+
+  const startSlowingPhase = (slotIndex: number) => {
+    if (slotIndex >= 3) {
+      // All slots in slowing phase, now stop them
+      stopSlot(0);
+      return;
+    }
+
+    setSlowingSlots(prev => [...prev, slotIndex]);
+    
+    // Keep spinning this slot while in slowing phase
+    const slowSpin = () => {
+      setSymbols(prev => {
+        const newSymbols = [...prev];
+        newSymbols[slotIndex] = getSymbol();
+        return newSymbols;
+      });
+      playSpinSound();
+    };
+    
+    // Spin this slot a few times while slowing
+    let slowSpins = 0;
+    const maxSlowSpins = 3;
+    
+    const slowInterval = setInterval(() => {
+      slowSpin();
+      slowSpins++;
+      if (slowSpins >= maxSlowSpins) {
+        clearInterval(slowInterval);
+      }
+    }, 100);
+    
+    setTimeout(() => {
+      startSlowingPhase(slotIndex + 1);
+    }, 400);
+  };
 
   const stopSlot = (slotIndex: number) => {
     if (slotIndex >= 3) {
-      // All slots stopped, determine winner
+      // All stopped, determine winner
       finalizeSpin();
       return;
     }
 
-    setStoppedSlots(prev => [...prev, slotIndex]);
-    
-    // Continue playing sound while stopping
+    // Final symbol for this slot
+    setSymbols(prev => {
+      const newSymbols = [...prev];
+      newSymbols[slotIndex] = getSymbol();
+      return newSymbols;
+    });
     playSpinSound();
     
     setTimeout(() => {
       stopSlot(slotIndex + 1);
-    }, 400);
+    }, 350);
   };
 
   const finalizeSpin = () => {
@@ -97,14 +142,14 @@ export default function SlotMachine({
   };
 
   const getSlotClass = (index: number) => {
-    const isStopped = stoppedSlots.includes(index);
+    const isSlowing = slowingSlots.includes(index);
     const isWinner = winnerSlots[index];
     
     let base = 'bg-gradient-to-b from-gray-100 via-gray-200 to-white w-[90px] sm:w-[65px] h-[110px] sm:h-[80px] rounded-xl flex items-center justify-center text-5xl sm:text-3xl border-4 shadow-[inset_0_2px_10px_rgba(0,0,0,0.1),0_4px_8px_rgba(0,0,0,0.3)] relative overflow-hidden';
     
     if (isWinner) {
       base += ' animate-winner-glow border-yellow-400';
-    } else if (!isStopped && spinning) {
+    } else if (spinning && !isSlowing) {
       base += ' animate-pulse';
     }
     
