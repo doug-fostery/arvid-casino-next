@@ -34,59 +34,43 @@ export default function SlotMachine({
     playSpinSound();
 
     let spins = 0;
-    const maxFastSpins = 15; // Fast spinning phase
-    const slowSpins = 10; // Slowing down phase
+    const maxFastSpins = 15;
+    const slowSpinsPerSlot = 4;
     
     const interval = setInterval(() => {
       setSymbols([getSymbol(), getSymbol(), getSymbol()]);
+      playSpinSound();
+      spins++;
       
-      // Stagger the slowing down
+      // Start slowing down phase
       if (spins >= maxFastSpins) {
         const slowingPhase = spins - maxFastSpins;
         
         setSlotStates(prev => {
           const newStates = [...prev];
           if (slowingPhase >= 0 && newStates[0] === 'spinning') newStates[0] = 'slowing';
-          if (slowingPhase >= 3 && newStates[1] === 'spinning') newStates[1] = 'slowing';
-          if (slowingPhase >= 6 && newStates[2] === 'spinning') newStates[2] = 'slowing';
+          if (slowingPhase >= slowSpinsPerSlot && newStates[1] === 'spinning') newStates[1] = 'slowing';
+          if (slowingPhase >= slowSpinsPerSlot * 2 && newStates[2] === 'spinning') newStates[2] = 'slowing';
           return newStates;
         });
       }
       
-      playSpinSound();
-      spins++;
-      
-      if (spins >= maxFastSpins + slowSpins) {
+      if (spins >= maxFastSpins + slowSpinsPerSlot * 3) {
         clearInterval(interval);
         
-        // Stop slots one by one with delay
-        setSlotStates(['slowing', 'spinning', 'spinning']);
-        setSymbols(prev => [prev[0], getSymbol(), getSymbol()]);
+        // Stop all slots at once with final symbols
+        const finalSymbols: Symbol[] = [getSymbol(), getSymbol(), getSymbol()];
+        setSymbols(finalSymbols);
+        setSlotStates(['stopped', 'stopped', 'stopped']);
         
-        setTimeout(() => {
-          setSlotStates(['stopped', 'slowing', 'spinning']);
-          setSymbols(prev => [...prev.slice(0, 1), getSymbol(), prev[2]]);
-          
-          setTimeout(() => {
-            setSlotStates(['stopped', 'stopped', 'slowing']);
-            setSymbols(prev => [...prev.slice(0, 2), getSymbol()]);
-            
-            setTimeout(() => {
-              setSlotStates(['stopped', 'stopped', 'stopped']);
-              finalizeSpin();
-            }, 400);
-          }, 400);
-        }, 400);
+        finalizeSpin(finalSymbols);
       }
-    }, 120);
+    }, 100);
 
     return () => clearInterval(interval);
   }, [spinning, playSpinSound]);
 
-  const finalizeSpin = () => {
-    const finalSymbols: Symbol[] = [getSymbol(), getSymbol(), getSymbol()];
-    setSymbols(finalSymbols);
-
+  const finalizeSpin = (finalSymbols: Symbol[]) => {
     const allSame = finalSymbols[0] === finalSymbols[1] && finalSymbols[1] === finalSymbols[2];
     const twoSame = finalSymbols[0] === finalSymbols[1] || 
                     finalSymbols[1] === finalSymbols[2] || 
@@ -116,7 +100,7 @@ export default function SlotMachine({
     const winner = winnerSlots[index];
     
     let animation = '';
-    if (state === 'spinning') animation = 'animate-spin-blur';
+    if (state === 'spinning') animation = 'animate-slow-spin';
     if (state === 'slowing') animation = 'animate-slow-spin';
     if (winner) animation = 'animate-winner-glow border-yellow-400';
     
@@ -132,7 +116,6 @@ export default function SlotMachine({
             id={`slot${i + 1}`}
             className={getSlotClass(i)}
           >
-            {/* Slot shine effect */}
             <div className="absolute top-0 left-0 right-0 h-5 bg-gradient-to-b from-white/80 to-transparent pointer-events-none"></div>
             {symbol}
           </div>

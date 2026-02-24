@@ -11,7 +11,7 @@ export default function Result({ text, type }: ResultProps) {
   };
 
   return (
-    <div className={`mt-6 p-5 rounded-xl text-lg font-bold uppercase tracking-wider min-h-[64px] sm:min-h-[48px] flex items-center justify-center ${styles[type]}`}>
+    <div className={`mt-6 p-5 rounded-xl text-xl sm:text-lg font-bold uppercase tracking-wider min-h-[64px] sm:min-h-[56px] flex items-center justify-center ${styles[type]}`}>
       {text}
     </div>
   );

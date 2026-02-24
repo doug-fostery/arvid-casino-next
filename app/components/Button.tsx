@@ -19,7 +19,7 @@ export default function Button({
   
   const variants = {
     primary: 'bg-gradient-to-r from-red-500 via-red-400 to-red-500 text-white rounded-xl shadow-[0_6px_0_#991b1b,0_10px_20px_rgba(220,38,38,0.4)] hover:translate-y-[-2px] hover:shadow-[0_8px_0_#991b1b,0_14px_25px_rgba(220,38,38,0.5)] active:translate-y-1 active:shadow-[0_2px_0_#991b1b,0_4px_10px_rgba(220,38,38,0.4)] before:content-[""] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:animate-shimmer',
-    secondary: 'bg-gradient-to-b from-gray-200 via-gray-100 to-gray-200 text-gray-800 rounded-full shadow-[0_4px_0_#9ca3af,0_6px_12px_rgba(156,163,175,0.4)] hover:scale-110 active:scale-95'
+    secondary: 'bg-gradient-to-b from-red-400 via-red-500 to-red-600 text-white w-14 h-14 sm:w-12 sm:h-12 rounded-full shadow-[0_4px_0_#991b1b,0_6px_12px_rgba(220,38,38,0.4)] hover:shadow-[0_6px_0_#991b1b,0_8px_16px_rgba(220,38,38,0.5)] active:translate-y-1 active:shadow-[0_2px_0_#991b1b] text-2xl sm:text-xl'
   };
 
   return (

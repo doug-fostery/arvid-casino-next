@@ -86,8 +86,8 @@ export default function Casino() {
 
   return (
     <div className="bg-gradient-to-b from-indigo-950 to-slate-950 p-8 sm:p-5 rounded-2xl max-w-md w-full text-center border-4 border-yellow-400 shadow-[0_0_30px_rgba(255,215,0,0.3),inset_0_0_60px_rgba(0,0,0,0.5)] relative before:content-[''] before:absolute before:top-2 before:left-2 before:right-2 before:bottom-2 before:border-2 before:border-yellow-400/50 before:rounded-[14px]">
-      <h1 className="text-3xl sm:text-2xl text-yellow-400 mb-2 tracking-widest animate-glow" style={{ textShadow: '0 0 10px #ffd700, 0 0 20px #ffd700, 0 0 30px #ff8c00' }}>🎰 Arvid's Salary Casino 🎰</h1>
-      <p className="text-gray-400 mb-6 text-sm italic">Win back your salary (probably not)</p>
+      <h1 className="text-4xl sm:text-3xl text-yellow-400 mb-3 tracking-widest animate-glow" style={{ textShadow: '0 0 10px #ffd700, 0 0 20px #ffd700, 0 0 30px #ff8c00' }}>🎰 Arvid's Salary Casino 🎰</h1>
+      <p className="text-gray-400 mb-6 text-base italic">Win back your salary (probably not)</p>
       
       <Balance balance={balance} animClass={balanceAnim} />
       
@@ -106,7 +106,7 @@ export default function Casino() {
       <Button 
         onClick={handleSpin}
         disabled={spinning}
-        className="w-full py-5 text-xl uppercase tracking-widest"
+        className="w-full py-5 text-2xl sm:text-xl uppercase tracking-widest"
       >
         🎲 SPIN! 🎲
       </Button>
