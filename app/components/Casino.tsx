@@ -9,6 +9,7 @@ import Result from './Result';
 import ArvidMessage from './ArvidMessage';
 import Stats from './Stats';
 import SoundToggle from './SoundToggle';
+import Confetti from './Confetti';
 import { useAudio } from '../hooks/useAudio';
 import { ARVID_QUOTES } from '../lib/quotes';
 import { INITIAL_BALANCE, MIN_BET, BET_STEP } from '../lib/types';
@@ -22,6 +23,7 @@ export default function Casino() {
   const [result, setResult] = useState({ text: 'Place your bet!', type: 'neutral' as 'neutral' | 'win' | 'lose' });
   const [arvidMsg, setArvidMsg] = useState(ARVID_QUOTES[0]);
   const [balanceAnim, setBalanceAnim] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const { soundEnabled, toggleSound, playSpinSound, playWinSound, playLoseSound, playClickSound, initAudio } = useAudio();
 
@@ -46,6 +48,7 @@ export default function Casino() {
     setBalance(prev => prev + win);
     setTotalWins(prev => prev + 1);
     setSpinning(false);
+    setShowConfetti(true);
     setResult({ 
       text: isJackpot 
         ? `🎉 JACKPOT! $${win}! 🎉` 
@@ -55,7 +58,10 @@ export default function Casino() {
       type: 'win' 
     });
     setBalanceAnim('win');
-    setTimeout(() => setBalanceAnim(''), 2000);
+    setTimeout(() => {
+      setBalanceAnim('');
+      setShowConfetti(false);
+    }, 2000);
     randomQuote();
   };
 
@@ -109,6 +115,7 @@ export default function Casino() {
       <ArvidMessage message={arvidMsg} />
       <Stats spins={totalSpins} wins={totalWins} />
       <SoundToggle enabled={soundEnabled} onToggle={toggleSound} />
+      <Confetti active={showConfetti} />
     </div>
   );
 }
