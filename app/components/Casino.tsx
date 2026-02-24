@@ -38,6 +38,7 @@ export default function Casino() {
     const win = bet * multiplier;
     setBalance(prev => prev + win);
     setTotalWins(prev => prev + 1);
+    setSpinning(false);
     setResult({ 
       text: isJackpot 
         ? `🎉 JACKPOT! $${win}! 🎉` 
@@ -52,6 +53,7 @@ export default function Casino() {
   };
 
   const handleLose = () => {
+    setSpinning(false);
     setResult({ text: `💸 You lost $${bet}`, type: 'lose' });
     setBalanceAnim('lose');
     setTimeout(() => setBalanceAnim(''), 500);
